@@ -35,6 +35,22 @@ Install the Flutter SDK and Android or iOS development prerequisites. From the r
     flutter test
     flutter run
 
+## Run tests
+
+From the repository root:
+
+```powershell
+flutter test
+flutter analyze
+python -m unittest discover -s backend -p "test_*.py" -v
+```
+
+Flutter tests check the home screen's introduction, all three flow steps,
+scrolling on a small phone, and enlarged text. Backend tests start a temporary
+local HTTP server on an available port and check health responses, query
+parameters, unknown routes, and JSON response headers. They require Python 3.10+
+and use only the standard library; no running backend or API keys are needed.
+
 ## AI integration
 
 Gemini image interpretation is planned. Calls will go through the Python backend, with credentials stored in server environment variables. Never place API keys in the mobile app or commit secrets.
