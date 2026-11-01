@@ -34,6 +34,11 @@ void main() {
     expect(find.text('Above the library'), findsOneWidget);
     await tester.tap(find.text('Home'));
     await tester.pumpAndSettle();
+    await tester.scrollUntilVisible(
+      find.text('1 cloud spotting recorded this session.'),
+      200,
+      scrollable: find.byType(Scrollable).first,
+    );
     expect(find.text('1 cloud spotting recorded this session.'), findsOneWidget);
     await tester.tap(find.text('Collection'));
     await tester.pumpAndSettle();
