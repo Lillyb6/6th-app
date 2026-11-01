@@ -11,7 +11,7 @@ A playful mobile app for spotting shapes in clouds and comparing guesses with fr
 
 ## Repository
 
-- `mobile/`: Flutter source scaffold and initial home screen.
+- `mobile/`: Flutter home screen, cloud spotting form, and session collection.
 - `backend/`: Python API starter with a health endpoint.
 - `docs/ROADMAP.md`: initial scope and development milestones.
 
@@ -35,6 +35,7 @@ cd mobile
 flutter create --project-name cloud_club --platforms android,ios .
 flutter pub get
 flutter analyze
+flutter test
 flutter run
 ```
 
@@ -46,4 +47,6 @@ Gemini image interpretation is planned. Calls will go through the Python backend
 
 ## Baseline status
 
-This is a starting scaffold. Photo capture, uploads, Gemini calls, accounts, storage, and social features are not implemented. The home screen does not connect to the backend yet.
+The mobile app includes Home and Collection navigation. Record a cloud shape and an optional note, browse observations, and delete an observation with an Undo action. Blank shapes are rejected. Entries live in memory for the current session and disappear when the app restarts.
+
+Photo capture, uploads, Gemini calls, accounts, persistent storage, and social features are not implemented. The mobile app does not connect to the backend yet.
