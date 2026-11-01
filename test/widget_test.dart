@@ -15,7 +15,7 @@ void main() {
     tester.view.physicalSize = const Size(640, 320);
     await tester.pumpAndSettle();
     expect(find.text('Cloud Club').hitTestable(), findsOneWidget);
-    final finalStep = find.text('3. Share and compare with friends');
+    final finalStep = find.text('Your discoveries');
     await tester.scrollUntilVisible(finalStep, 150);
     await tester.pumpAndSettle();
     expect(finalStep.hitTestable(), findsOneWidget);
@@ -38,7 +38,7 @@ void main() {
       greaterThanOrEqualTo(44),
     );
     final notice = find.text(
-      'Photo capture and AI interpretations are coming next. This is the Cloud Club starting screen.',
+      'Entries last for this session and disappear when the app restarts. Photos and AI guesses are coming later.',
     );
     await tester.scrollUntilVisible(notice, 150);
     await tester.pumpAndSettle();
@@ -51,12 +51,10 @@ void main() {
     await tester.pumpWidget(const CloudClubApp());
     expect(find.text('Cloud Club'), findsOneWidget);
     expect(find.text('What do you see?'), findsOneWidget);
-    expect(find.text('1. Capture or upload a cloud'), findsOneWidget);
-    expect(
-      find.text('2. Guess its shape and reveal the AI suggestion'),
-      findsOneWidget,
-    );
-    expect(find.text('3. Share and compare with friends'), findsOneWidget);
+    expect(find.text('Record a cloud spotting'), findsOneWidget);
+    expect(find.text('A little inspiration'), findsOneWidget);
+    await tester.scrollUntilVisible(find.text('Your discoveries'), 150);
+    expect(find.text('Your discoveries'), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
 
@@ -72,7 +70,7 @@ void main() {
     expect(tester.takeException(), isNull);
 
     final notice = find.text(
-      'Photo capture and AI interpretations are coming next. This is the Cloud Club starting screen.',
+      'Entries last for this session and disappear when the app restarts. Photos and AI guesses are coming later.',
     );
     await tester.scrollUntilVisible(notice, 150);
     await tester.pumpAndSettle();
@@ -90,15 +88,9 @@ void main() {
       ),
     );
 
-    await tester.scrollUntilVisible(
-      find.text('3. Share and compare with friends'),
-      200,
-    );
+    await tester.scrollUntilVisible(find.text('Your discoveries'), 200);
     await tester.pumpAndSettle();
-    expect(
-      find.text('3. Share and compare with friends').hitTestable(),
-      findsOneWidget,
-    );
+    expect(find.text('Your discoveries').hitTestable(), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
 
@@ -113,7 +105,7 @@ void main() {
     await tester.pumpWidget(const CloudClubApp());
 
     final comingSoonMessage = find.text(
-      'Photo capture and AI interpretations are coming next. This is the Cloud Club starting screen.',
+      'Entries last for this session and disappear when the app restarts. Photos and AI guesses are coming later.',
     );
     await tester.scrollUntilVisible(
       comingSoonMessage,

@@ -11,7 +11,7 @@ A playful mobile app for spotting shapes in clouds and comparing guesses with fr
 
 ## Repository
 
-- `lib/`: Flutter source and initial home screen; platform projects live at the repository root.
+- `lib/`: Flutter home screen, spotting journal, and session collection; platform projects live at the repository root.
 - `backend/`: Python API starter with a health endpoint.
 - `docs/ROADMAP.md`: initial scope and development milestones.
 
@@ -45,7 +45,7 @@ flutter analyze
 python -m unittest discover -s backend -p "test_*.py" -v
 ```
 
-Flutter tests check the home screen's introduction, all three flow steps,
+Flutter tests check the home screen, journal validation, save/delete/undo flow,
 scrolling on a small phone, enlarged text, rotation to landscape, and device
 safe areas. Backend tests start a temporary
 local HTTP server on an available port and check health responses, query
@@ -59,4 +59,4 @@ Gemini image interpretation is planned. Calls will go through the Python backend
 
 ## Baseline status
 
-This is a starting scaffold. Photo capture, uploads, Gemini calls, accounts, storage, and social features are not implemented. The home screen does not connect to the backend yet.
+The app includes Home and Collection navigation. Record cloud shapes and optional notes, browse entries, and delete with Undo. Entries last for the current session and disappear when the app restarts. Photo capture, uploads, Gemini calls, accounts, persistent storage, and social features are not implemented. The app does not connect to the backend yet.

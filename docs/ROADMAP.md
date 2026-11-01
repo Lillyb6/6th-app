@@ -11,6 +11,9 @@
 
 ## Milestone 2: Personal collection
 
+- [x] Add Home and Collection navigation with an in-memory spotting journal.
+- [x] Validate shape entries and support deletion with Undo.
+
 - Choose authentication and image storage.
 - Save photos, guesses, and AI interpretations.
 - Add collection browsing and deletion.
