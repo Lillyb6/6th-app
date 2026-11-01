@@ -49,6 +49,22 @@ class CloudClubApiTests(unittest.TestCase):
                 self.assertEqual(status, 404)
                 self.assertEqual(payload, {"error": "Not found"})
 
+    def test_health_still_works_after_unknown_route(self):
+        self.assertEqual(self.get_json("/missing")[0], 404)
+        status, payload = self.get_json("/health")
+        self.assertEqual(status, 200)
+        self.assertEqual(payload, {"status": "ok", "service": "cloud-club-api"})
+
+    def test_unsupported_method_is_rejected_without_breaking_health(self):
+        connection = http.client.HTTPConnection(*self.server.server_address, timeout=5)
+        self.addCleanup(connection.close)
+        connection.request("POST", "/health", body=b"{}",
+                           headers={"Content-Type": "application/json"})
+        response = connection.getresponse()
+        response.read()
+        self.assertEqual(response.status, 501)
+        self.assertEqual(self.get_json("/health")[0], 200)
+
 
 if __name__ == "__main__":
     unittest.main()

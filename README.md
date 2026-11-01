@@ -46,9 +46,11 @@ python -m unittest discover -s backend -p "test_*.py" -v
 ```
 
 Flutter tests check the home screen's introduction, all three flow steps,
-scrolling on a small phone, and enlarged text. Backend tests start a temporary
+scrolling on a small phone, enlarged text, rotation to landscape, and device
+safe areas. Backend tests start a temporary
 local HTTP server on an available port and check health responses, query
-parameters, unknown routes, and JSON response headers. They require Python 3.10+
+parameters, unknown routes, JSON response headers, and continued availability
+after invalid routes and unsupported HTTP methods. They require Python 3.10+
 and use only the standard library; no running backend or API keys are needed.
 
 ## AI integration

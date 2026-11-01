@@ -3,6 +3,50 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:sixthapp/main.dart';
 
 void main() {
+  testWidgets('Content stays reachable after rotating to landscape', (
+    tester,
+  ) async {
+    tester.view.devicePixelRatio = 1;
+    tester.view.physicalSize = const Size(320, 480);
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    await tester.pumpWidget(const CloudClubApp());
+
+    tester.view.physicalSize = const Size(640, 320);
+    await tester.pumpAndSettle();
+    expect(find.text('Cloud Club').hitTestable(), findsOneWidget);
+    final finalStep = find.text('3. Share and compare with friends');
+    await tester.scrollUntilVisible(finalStep, 150);
+    await tester.pumpAndSettle();
+    expect(finalStep.hitTestable(), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('Content avoids device cutouts and the bottom system area', (
+    tester,
+  ) async {
+    tester.view.devicePixelRatio = 1;
+    tester.view.physicalSize = const Size(400, 700);
+    tester.view.padding = FakeViewPadding(top: 44, bottom: 34);
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    addTearDown(tester.view.resetPadding);
+    await tester.pumpWidget(const CloudClubApp());
+
+    expect(
+      tester.getTopLeft(find.text('Cloud Club')).dy,
+      greaterThanOrEqualTo(44),
+    );
+    final notice = find.text(
+      'Photo capture and AI interpretations are coming next. This is the Cloud Club starting screen.',
+    );
+    await tester.scrollUntilVisible(notice, 150);
+    await tester.pumpAndSettle();
+    expect(notice.hitTestable(), findsOneWidget);
+    expect(tester.getBottomRight(notice).dy, lessThanOrEqualTo(700 - 34));
+    expect(tester.takeException(), isNull);
+  });
+
   testWidgets('Cloud Club introduces the cloud spotting flow', (tester) async {
     await tester.pumpWidget(const CloudClubApp());
     expect(find.text('Cloud Club'), findsOneWidget);
@@ -16,7 +60,9 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets('Starting screen remains readable on a small phone', (tester) async {
+  testWidgets('Starting screen remains readable on a small phone', (
+    tester,
+  ) async {
     tester.view.physicalSize = const Size(320, 480);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.resetPhysicalSize);
