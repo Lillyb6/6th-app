@@ -6,7 +6,7 @@ void main() {
   testWidgets('Reject blank shapes and cancel without adding a spotting', (
     tester,
   ) async {
-    await tester.pumpWidget(const CloudClubApp());
+    await tester.pumpWidget(const MaterialApp(home: CloudClubHome()));
     await tester.tap(find.text('Record a cloud spotting'));
     await tester.pumpAndSettle();
     await tester.enterText(find.byType(TextFormField).first, '   ');
@@ -25,7 +25,7 @@ void main() {
   testWidgets('Save, browse, delete and restore an observation', (
     tester,
   ) async {
-    await tester.pumpWidget(const CloudClubApp());
+    await tester.pumpWidget(const MaterialApp(home: CloudClubHome()));
     await tester.tap(find.text('Record a cloud spotting'));
     await tester.pumpAndSettle();
     await tester.enterText(

@@ -10,7 +10,7 @@ void main() {
     tester.view.physicalSize = const Size(320, 480);
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
-    await tester.pumpWidget(const CloudClubApp());
+    await tester.pumpWidget(const MaterialApp(home: CloudClubHome()));
 
     tester.view.physicalSize = const Size(640, 320);
     await tester.pumpAndSettle();
@@ -31,7 +31,7 @@ void main() {
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
     addTearDown(tester.view.resetPadding);
-    await tester.pumpWidget(const CloudClubApp());
+    await tester.pumpWidget(const MaterialApp(home: CloudClubHome()));
 
     expect(
       tester.getTopLeft(find.text('Cloud Club')).dy,
@@ -48,7 +48,7 @@ void main() {
   });
 
   testWidgets('Cloud Club introduces the cloud spotting flow', (tester) async {
-    await tester.pumpWidget(const CloudClubApp());
+    await tester.pumpWidget(const MaterialApp(home: CloudClubHome()));
     expect(find.text('Cloud Club'), findsOneWidget);
     expect(find.text('What do you see?'), findsOneWidget);
     expect(find.text('Record a cloud spotting'), findsOneWidget);
@@ -66,7 +66,7 @@ void main() {
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
 
-    await tester.pumpWidget(const CloudClubApp());
+    await tester.pumpWidget(const MaterialApp(home: CloudClubHome()));
     expect(tester.takeException(), isNull);
 
     final notice = find.text(
@@ -102,7 +102,7 @@ void main() {
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
 
-    await tester.pumpWidget(const CloudClubApp());
+    await tester.pumpWidget(const MaterialApp(home: CloudClubHome()));
 
     final comingSoonMessage = find.text(
       'Entries last for this session and disappear when the app restarts. Photos and AI guesses are coming later.',

@@ -1,9 +1,13 @@
 import 'package:flutter/material.dart';
 
+import 'auth_api.dart';
+import 'auth_screen.dart';
+
 void main() => runApp(const CloudClubApp());
 
 class CloudClubApp extends StatelessWidget {
-  const CloudClubApp({super.key});
+  const CloudClubApp({super.key, this.authApi});
+  final AuthApi? authApi;
 
   @override
   Widget build(BuildContext context) {
@@ -15,7 +19,11 @@ class CloudClubApp extends StatelessWidget {
         colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFF397FA3)),
         scaffoldBackgroundColor: const Color(0xFFF0F7FC),
       ),
-      home: const CloudClubHome(),
+      home: AuthGate(
+        api: authApi,
+        signedInBuilder: (name, logout) =>
+            CloudClubHome(name: name, onLogout: logout),
+      ),
     );
   }
 }
@@ -27,7 +35,9 @@ class CloudObservation {
 }
 
 class CloudClubHome extends StatefulWidget {
-  const CloudClubHome({super.key});
+  const CloudClubHome({super.key, this.name, this.onLogout});
+  final String? name;
+  final VoidCallback? onLogout;
 
   @override
   State<CloudClubHome> createState() => _CloudClubHomeState();
@@ -75,7 +85,17 @@ class _CloudClubHomeState extends State<CloudClubHome> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text(_tab == 0 ? 'Cloud Club' : 'My Collection')),
+      appBar: AppBar(
+        title: Text(_tab == 0 ? 'Cloud Club' : 'My Collection'),
+        actions: [
+          if (widget.onLogout != null)
+            IconButton(
+              tooltip: 'Log out',
+              onPressed: widget.onLogout,
+              icon: const Icon(Icons.logout),
+            ),
+        ],
+      ),
       body: SafeArea(
         child: Center(
           child: ConstrainedBox(
@@ -109,6 +129,7 @@ class _CloudClubHomeState extends State<CloudClubHome> {
   }
 
   List<Widget> _home(BuildContext context) => [
+    if (widget.name != null) Text('Hello, ${widget.name}!'),
     const Icon(Icons.cloud_outlined, size: 100, color: Color(0xFF397FA3)),
     const SizedBox(height: 24),
     Text('What do you see?', style: Theme.of(context).textTheme.headlineLarge),

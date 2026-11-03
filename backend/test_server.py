@@ -62,7 +62,7 @@ class CloudClubApiTests(unittest.TestCase):
                            headers={"Content-Type": "application/json"})
         response = connection.getresponse()
         response.read()
-        self.assertEqual(response.status, 501)
+        self.assertEqual(response.status, 404)
         self.assertEqual(self.get_json("/health")[0], 200)
 
 

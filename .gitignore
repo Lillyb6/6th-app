@@ -53,3 +53,4 @@ app.*.map.json
 !.env.example
 __pycache__/
 .venv/
+backend/data/
