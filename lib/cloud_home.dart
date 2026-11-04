@@ -442,14 +442,12 @@ class _CloudClubHomeState extends State<CloudClubHome> {
     onRefresh: _load,
     child: LayoutBuilder(
       builder: (context, constraints) {
-        final rail = constraints.maxWidth >= 850;
-        // At 1100px: 40 + 680 + 24 + 256 + 40 = 1040, within the shared canvas.
         return SingleChildScrollView(
           physics: const AlwaysScrollableScrollPhysics(),
           padding: EdgeInsets.all(constraints.maxWidth < 600 ? 20 : 40),
           child: Center(
             child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 1100),
+              constraints: const BoxConstraints(maxWidth: 780),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -522,10 +520,6 @@ class _CloudClubHomeState extends State<CloudClubHome> {
                           ],
                         ),
                       ),
-                      if (rail) ...[
-                        const SizedBox(width: 24),
-                        Expanded(flex: 3, child: _clubNote()),
-                      ],
                     ],
                   ),
                 ],
@@ -575,58 +569,6 @@ class _CloudClubHomeState extends State<CloudClubHome> {
         style: TextStyle(fontSize: 12, color: cloudMuted),
       ),
     ],
-  );
-  Widget _clubNote() => Container(
-    padding: const EdgeInsets.all(24),
-    decoration: BoxDecoration(
-      color: cloudGround,
-      borderRadius: BorderRadius.circular(22),
-    ),
-    child: Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        CloudAvatar(name: _name, data: _avatar, radius: 24),
-        const SizedBox(height: 16),
-        Text(
-          _name,
-          style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 16),
-        ),
-        const SizedBox(height: 6),
-        Text(
-          (_profile['bio'] as String? ?? '').isEmpty
-              ? 'Your own little patch of sky.'
-              : _profile['bio'] as String,
-          style: const TextStyle(color: cloudMuted, height: 1.5),
-        ),
-        const SizedBox(height: 12),
-        TextButton(
-          onPressed: () => setState(() => _tab = 2),
-          child: const Text('Visit your profile  →'),
-        ),
-        const Padding(
-          padding: EdgeInsets.symmetric(vertical: 16),
-          child: Divider(),
-        ),
-        const Text(
-          'A good cloud is worth sharing.',
-          style: TextStyle(
-            fontFamily: 'Instrument Serif',
-            fontSize: 27,
-            height: 1.15,
-          ),
-        ),
-        const SizedBox(height: 12),
-        const Text(
-          'A passing shape. An unexpected colour. Something only you noticed.',
-          style: TextStyle(color: cloudMuted, height: 1.6),
-        ),
-        const SizedBox(height: 20),
-        const Text(
-          'Keep it kind. Post your own photos. Leave room for imagination.',
-          style: TextStyle(color: cloudMuted, fontSize: 12, height: 1.6),
-        ),
-      ],
-    ),
   );
   Widget _profileView() => SingleChildScrollView(
     padding: EdgeInsets.all(MediaQuery.sizeOf(context).width < 600 ? 20 : 40),
