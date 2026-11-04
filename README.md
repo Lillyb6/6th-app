@@ -72,8 +72,16 @@ Flutter tests cover login, signup validation, logout, photo selection and postin
 
 ## Design and credits
 
-The taste skill's **Editorial greeting** direction (seed `1131462837`) supplies Instrument Sans and Instrument Serif, flat pale-blue surfaces, rounded photographs, and quiet navigation. The sky photograph carries the colour; the app's controls stay restrained. No sample member posts or fabricated engagement counts are seeded into the app.
+The taste skill's **Editorial greeting** direction (seed `1131462837`) supplies Instrument Sans and Instrument Serif, flat pale-blue surfaces, rounded photographs, and quiet navigation. The sky photograph carries the colour; the app's controls stay restrained. The local preview includes six explicitly fictional members and cloud posts added with the optional demo-data script. Their sample likes are actual rows attached to the fictional accounts.
 
 The welcome/empty-feed photograph is **Blue sky background clouds**, CC0, via [rawpixel](https://www.rawpixel.com/image/6039137/photo-image-background-cloud-public-domain). It is a welcome image, not a member's post. The feed displays its credit. Metadata is in `assets/credits.json`. Instrument Sans and Instrument Serif use the SIL Open Font License; the license texts are bundled in `assets/fonts/`.
 
 The skill's HTML/CSS linter does not support Dart, and its DOM inspector cannot measure text drawn into Flutter's canvas. Responsive Flutter tests and actual browser screenshots provide the layout checks; the DOM-only report must not be presented as a clean audit.
+
+## Optional social feed sample data
+
+The current local database has six fictional cloud watchers with illustrated avatars, varied cloud photos, captions, and sample likes. These are demo posts, not real community activity.
+
+To populate another local database, run `python backend/seed_demo.py`. Running it again does not duplicate posts. To remove only these fictional accounts and their posts, run `python backend/seed_demo.py --remove`. Both commands respect `AUTH_DATABASE` and preserve normal members and their posts. Demo accounts have no usable login credentials.
+
+Cloud photographs are CC0 images credited in `assets/credits.json`. Avatars use Avataaars by Pablo Stanley, rendered through DiceBear, CC0; source details are in `backend/demo_assets/CREDITS.md`. All images are bundled locally, so the demo script and app do not fetch external avatar or photo services while running.

@@ -52,3 +52,7 @@ A temporary local account named Sky, a sample bio, and one licensed cloud photo 
 Welcome photo: Blue sky background clouds, CC0, via rawpixel: https://www.rawpixel.com/image/6039137/photo-image-background-cloud-public-domain . Its credit is displayed below the empty feed image and recorded in assets/credits.json and README.md. It is a welcome illustration, not a member's post.
 
 Instrument Sans and Instrument Serif are bundled with their SIL Open Font License texts in assets/fonts.
+
+## Follow-up: populated social feed
+
+At the user's request, six persistent fictional members and posts were added using the optional `backend/seed_demo.py` script. Names, captions, locations, and initial likes are sample content. Avatar illustrations use Avataaars via DiceBear; cloud photo credits are in assets/credits.json. These demo accounts are distinct from the earlier disposable review account. The script is repeatable and can remove its own data without removing normal members' posts. The profile suggestion panel was also removed from the Clouds page at the user's request, leaving a centered photo feed.
