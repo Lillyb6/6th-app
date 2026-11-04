@@ -1,109 +1,79 @@
 # Cloud Club
 
-A playful mobile app for spotting shapes in clouds and comparing guesses with friends.
+A photo community for people who always look up. Sign in, share a cloud, and collect your favourite views of the sky.
 
-## Product flow
+## The three tabs
 
-1. Create an account or log in.
-2. Record a cloud shape and an optional note in the session journal.
-3. Browse your collection or delete an entry with Undo.
+- **Clouds:** a chronological, paginated feed of photos posted by members. Like photos, copy a caption, and refresh for new posts.
+- **Post (+):** choose a JPEG, PNG, or WebP photo up to 5 MB, preview it, add a caption and optional location, then publish it to the club. You can feature it in your best clouds.
+- **Profile:** a profile photo, name, editable bio, and galleries for best clouds and all your photos. Open a photo to feature or unfeature it, like it, or delete your own post.
 
-Photo capture, AI interpretations, and sharing with friends are planned next.
+Photos, captions, likes, bios, avatars, and best-cloud selections persist in SQLite across app and backend restarts. Accounts share the same community feed. The layout follows the cloud / plus / profile sketch on phones and uses a sidebar on desktop.
 
-## Repository
+## Run locally
 
-- `lib/`: Flutter home screen, spotting journal, and session collection; platform projects live at the repository root.
-- `backend/`: Python API with SQLite accounts, login sessions, and health endpoint.
-- `docs/ROADMAP.md`: initial scope and development milestones.
+Python 3.10+ and Flutter are required. The backend has no third-party Python dependencies.
 
-## Start the backend
-
-Requires Python 3.10 or newer. No third-party packages are needed yet.
+Start the backend in one terminal:
 
 ```powershell
-cd backend
-python server.py
+python backend/server.py
 ```
 
-Visit `http://127.0.0.1:8000/health`. Expected response: `{"status": "ok", "service": "cloud-club-api"}`.
+Then start the app in another:
 
-Leave the backend running while using signup and login. Accounts are saved to
-`backend/data/accounts.sqlite3` (ignored by Git). Set `AUTH_DATABASE` to change
-the database path. Environment variables must be set in the shell; `.env` files
-are examples and are not loaded automatically.
+```powershell
+flutter pub get
+flutter run -d chrome --web-hostname localhost --web-port 8080
+```
 
-## Start the mobile app
+The API health check is `http://127.0.0.1:8000/health`. Keep the backend running for login, uploading, the feed, and profile edits.
 
-Install the Flutter SDK and Android or iOS development prerequisites. From the repository root, run:
+For a self-contained web build (including the Flutter rendering files):
 
-    flutter pub get
-    flutter analyze
-    flutter test
-    flutter run
+```powershell
+flutter build web --no-web-resources-cdn
+python -m http.server 8080 --bind localhost --directory build/web
+```
 
-The default API address is `http://127.0.0.1:8000`, suitable for the Windows app
-or a browser on the backend computer. For the Android emulator, use:
+Open `http://localhost:8080`.
+
+Windows desktop builds need Visual Studio's **Desktop development with C++** workload. Flutter file-picker plugins also require Windows Developer Mode for symbolic links. Chrome preview works without the native Windows build tools. macOS file-picker builds need the user-selected read-only file entitlement; it is included in both Runner entitlement files.
+
+For an Android emulator:
 
 ```powershell
 flutter run --dart-define=API_BASE_URL=http://10.0.2.2:8000
 ```
 
-For local Flutter web development, the backend allows the exact origin
-`http://localhost:8080` by default:
+Physical devices need a reachable API address passed using `--dart-define=API_BASE_URL=...`. The backend binds to `127.0.0.1` by default. Set `HOST` only when you intentionally want to expose your development server to your local network. Web development allows the exact origin `http://localhost:8080`; set `WEB_ORIGIN` on the backend for a different web origin.
+
+## Data and accounts
+
+The backend saves to `backend/data/accounts.sqlite3`, ignored by Git. Set `AUTH_DATABASE` to change the path. Existing accounts are preserved, and the social tables are created automatically. Environment variables must be set in the shell; `.env` files are not loaded automatically.
+
+Passwords use salted PBKDF2-HMAC-SHA256 hashes. Bearer sessions expire after 24 hours, and logout revokes them. Sessions stay in app memory, so restarting the app requires login again. Logging out clears the displayed account's data from the app; their saved photos remain in the database.
+
+Uploads accept JPEG, PNG, and WebP signatures and enforce a 5 MB limit. Posts and avatars are stored as image data in the local database. The feed loads 12 photos at a time, with older photos available using **More clouds**. Profile galleries load older photos with **Load older clouds**. Counts describe the loaded photos; a plus indicates older photos remain.
+
+API routes: `GET /feed`, `GET /profile`, `GET /profile/posts`, `POST /posts`, `POST /profile`, `POST /posts/{id}/like`, `POST /posts/{id}/best`, and `POST /posts/{id}/delete`. All require a valid login session. Feed and own-photo endpoints accept a `before` post-ID cursor. Only the owner can feature or delete a photo. Authentication routes remain `POST /auth/signup`, `POST /auth/login`, `POST /auth/logout`, and `GET /auth/me`.
+
+This is a local development app. Hosted use still needs HTTPS, production hosting, image processing/storage, moderation/reporting, and operational limits. Photos are visible to signed-in members; there are no private posts. Comments, followers, photo capture, cloud AI guesses, and password recovery are not included. The share action copies a caption rather than publishing an external link.
+
+## Checks
 
 ```powershell
-flutter run -d chrome --web-hostname localhost --web-port 8080
-```
-
-Set `WEB_ORIGIN` on the backend if the web app uses a different origin.
-Physical devices need a reachable backend address supplied with
-`--dart-define=API_BASE_URL=...`. Hosted builds should use an HTTPS backend;
-Android permits local HTTP only in debug builds. The bundled Python HTTP server
-is for local development, not a public production deployment.
-
-## Accounts and login
-
-The app requires login before showing the journal. Signup asks for a name,
-email, a password of 12–128 characters, and password confirmation. Email
-addresses are normalized to lowercase. The server stores unique salted
-PBKDF2-HMAC-SHA256 password hashes with 600,000 iterations, not plaintext
-passwords. Random bearer sessions expire after 24 hours; logout revokes the
-session on the server. Authentication requests are limited to 10 per minute
-per client IP in this single-server setup.
-
-Session tokens are held only in app memory, so restarting requires login again.
-Accounts survive backend restarts. Journal entries remain session-only and are
-cleared on logout, expiry, or app restart; they are not saved with the account
-yet. Email verification, password reset, and account deletion are not implemented.
-
-API routes: `POST /auth/signup`, `POST /auth/login`, `POST /auth/logout`, and
-`GET /auth/me`. The last two require `Authorization: Bearer <token>`.
-
-## Run tests
-
-From the repository root:
-
-```powershell
-flutter test
 flutter analyze
+flutter test
 python -m unittest discover -s backend -p "test_*.py" -v
 ```
 
-Flutter tests check required login, signup confirmation, rejected credentials,
-network errors, logout isolation, journal validation, save/delete/undo flow,
-scrolling on a small phone, enlarged text, rotation to landscape, and device
-safe areas. Backend tests start a temporary
-local HTTP server on an available port and check health responses, query
-parameters, unknown routes, JSON response headers, and continued availability
-after invalid routes and unsupported HTTP methods. Authentication tests also
-check persistent accounts, password hashing, expired and revoked sessions,
-duplicate emails, validation, and rate limiting. They require Python 3.10+
-and use only the standard library; no running backend or API keys are needed.
+Flutter tests cover login, signup validation, logout, photo selection and posting, likes, best-cloud gallery, profile edits, errors, device safe areas, narrow phones, landscape, tablet, desktop, and enlarged text. Backend tests cover authentication, cross-account feed visibility, persistence, upload validation, idempotent likes, owner-only actions, deletion cleanup, and cursor pagination.
 
-## AI integration
+## Design and credits
 
-Gemini image interpretation is planned. Calls will go through the Python backend, with credentials stored in server environment variables. Never place API keys in the mobile app or commit secrets.
+The taste skill's **Editorial greeting** direction (seed `1131462837`) supplies Instrument Sans and Instrument Serif, flat pale-blue surfaces, rounded photographs, and quiet navigation. The sky photograph carries the colour; the app's controls stay restrained. No sample member posts or fabricated engagement counts are seeded into the app.
 
-## Baseline status
+The welcome/empty-feed photograph is **Blue sky background clouds**, CC0, via [rawpixel](https://www.rawpixel.com/image/6039137/photo-image-background-cloud-public-domain). It is a welcome image, not a member's post. The feed displays its credit. Metadata is in `assets/credits.json`. Instrument Sans and Instrument Serif use the SIL Open Font License; the license texts are bundled in `assets/fonts/`.
 
-The app includes required signup/login, logout, and Home and Collection navigation. Record cloud shapes and optional notes, browse entries, and delete with Undo. Accounts persist on the backend; journal entries disappear on logout or restart. Photo capture, uploads, Gemini calls, persistent journal storage, and social features are not implemented.
+The skill's HTML/CSS linter does not support Dart, and its DOM inspector cannot measure text drawn into Flutter's canvas. Responsive Flutter tests and actual browser screenshots provide the layout checks; the DOM-only report must not be presented as a clean audit.

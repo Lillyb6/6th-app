@@ -1,11 +1,11 @@
 {
-    "name": "sixthapp",
-    "short_name": "sixthapp",
+    "name": "Cloud Club",
+    "short_name": "Cloud Club",
     "start_url": ".",
     "display": "standalone",
-    "background_color": "#0175C2",
-    "theme_color": "#0175C2",
-    "description": "A new Flutter project.",
+    "background_color": "#F2F6F8",
+    "theme_color": "#F2F6F8",
+    "description": "Catch a cloud. Share your sky.",
     "orientation": "portrait-primary",
     "prefer_related_applications": false,
     "icons": [

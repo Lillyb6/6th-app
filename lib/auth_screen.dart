@@ -3,11 +3,13 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 
 import 'auth_api.dart';
+import 'auth_layout.dart';
 
 class AuthGate extends StatefulWidget {
   const AuthGate({super.key, this.api, required this.signedInBuilder});
   final AuthApi? api;
-  final Widget Function(String name, VoidCallback logout) signedInBuilder;
+  final Widget Function(LoginSession session, VoidCallback logout)
+  signedInBuilder;
 
   @override
   State<AuthGate> createState() => _AuthGateState();
@@ -103,172 +105,149 @@ class _AuthGateState extends State<AuthGate> {
           children: [
             AbsorbPointer(
               absorbing: _busy,
-              child: widget.signedInBuilder(_session!.name, _logout),
+              child: widget.signedInBuilder(_session!, _logout),
             ),
             if (_busy) const SafeArea(child: LinearProgressIndicator()),
           ],
         ),
       );
     }
-    return Scaffold(
-      appBar: AppBar(title: const Text('Cloud Club')),
-      body: SafeArea(
-        child: Center(
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 480),
-            child: AutofillGroup(
-              child: Form(
-                key: _formKey,
-                child: ListView(
-                  shrinkWrap: true,
-                  padding: const EdgeInsets.all(24),
-                  children: [
-                    const Icon(
-                      Icons.cloud_outlined,
-                      size: 72,
-                      color: Color(0xFF397FA3),
-                    ),
-                    const SizedBox(height: 16),
-                    Text(
-                      _signup ? 'Join Cloud Club' : 'Welcome back',
-                      style: Theme.of(context).textTheme.headlineMedium,
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      _signup
-                          ? 'Create an account to start your cloud journal.'
-                          : 'Log in to start spotting shapes in the sky.',
-                    ),
-                    const SizedBox(height: 24),
-                    if (_signup) ...[
-                      TextFormField(
-                        controller: _name,
-                        enabled: !_busy,
-                        maxLength: 60,
-                        autofillHints: const [AutofillHints.nickname],
-                        textCapitalization: TextCapitalization.words,
-                        decoration: const InputDecoration(labelText: 'Name'),
-                        validator: (value) =>
-                            value == null || value.trim().isEmpty
-                            ? 'Enter your name.'
-                            : null,
-                      ),
-                      const SizedBox(height: 12),
-                    ],
-                    TextFormField(
-                      controller: _email,
-                      enabled: !_busy,
-                      keyboardType: TextInputType.emailAddress,
-                      autocorrect: false,
-                      autofillHints: const [AutofillHints.email],
-                      decoration: const InputDecoration(labelText: 'Email'),
-                      validator: (value) =>
-                          value == null ||
-                              value.trim().length > 254 ||
-                              !RegExp(r'^[^\s@]+@[^\s@]+\.[^\s@]+$')
-                                  .hasMatch(value.trim())
-                          ? 'Enter a valid email address.'
-                          : null,
-                    ),
-                    const SizedBox(height: 12),
-                    TextFormField(
-                      controller: _password,
-                      enabled: !_busy,
-                      obscureText: !_showPassword,
-                      autocorrect: false,
-                      enableSuggestions: false,
-                      autofillHints: [
-                        _signup
-                            ? AutofillHints.newPassword
-                            : AutofillHints.password,
-                      ],
-                      decoration: InputDecoration(
-                        labelText: 'Password',
-                        helperText: _signup
-                            ? 'Use 12 to 128 characters.'
-                            : null,
-                        suffixIcon: IconButton(
-                          tooltip: _showPassword
-                              ? 'Hide password'
-                              : 'Show password',
-                          onPressed: _busy
-                              ? null
-                              : () => setState(
-                                  () => _showPassword = !_showPassword,
-                                ),
-                          icon: Icon(
-                            _showPassword
-                                ? Icons.visibility_off
-                                : Icons.visibility,
-                          ),
-                        ),
-                      ),
-                      validator: (value) =>
-                          value == null ||
-                              value.length < 12 ||
-                              value.length > 128
-                          ? 'Use a password between 12 and 128 characters.'
-                          : null,
-                    ),
-                    if (_signup) ...[
-                      const SizedBox(height: 12),
-                      TextFormField(
-                        controller: _confirm,
-                        enabled: !_busy,
-                        obscureText: !_showPassword,
-                        autocorrect: false,
-                        enableSuggestions: false,
-                        decoration: const InputDecoration(
-                          labelText: 'Confirm password',
-                        ),
-                        validator: (value) => value != _password.text
-                            ? 'Passwords do not match.'
-                            : null,
-                      ),
-                    ],
-                    if (_error != null) ...[
-                      const SizedBox(height: 16),
-                      Semantics(
-                        liveRegion: true,
-                        child: Text(
-                          _error!,
-                          style: TextStyle(
-                            color: Theme.of(context).colorScheme.error,
-                          ),
-                        ),
-                      ),
-                    ],
-                    const SizedBox(height: 24),
-                    FilledButton(
-                      onPressed: _busy ? null : _submit,
-                      child: Text(
-                        _busy
-                            ? 'Please wait...'
-                            : _signup
-                            ? 'Create account'
-                            : 'Log in',
-                      ),
-                    ),
-                    TextButton(
-                      onPressed: _busy
-                          ? null
-                          : () => setState(() {
-                              _signup = !_signup;
-                              _error = null;
-                              _password.clear();
-                              _confirm.clear();
-                              _formKey.currentState?.reset();
-                            }),
-                      child: Text(
-                        _signup
-                            ? 'Already a member? Log in'
-                            : 'New here? Create an account',
-                      ),
-                    ),
-                  ],
+    return AuthLayout(
+      child: AutofillGroup(
+        child: Form(
+          key: _formKey,
+          child: ListView(
+            shrinkWrap: true,
+            padding: const EdgeInsets.all(24),
+            children: [
+              const SizedBox(height: 8),
+              Text(
+                _signup ? 'Join Cloud Club' : 'Welcome back',
+                style: const TextStyle(
+                  fontFamily: 'Instrument Serif',
+                  fontSize: 32,
                 ),
               ),
-            ),
+              const SizedBox(height: 8),
+              Text(
+                _signup
+                    ? 'Find your people. Share your sky.'
+                    : 'Your little corner of the sky is waiting.',
+              ),
+              const SizedBox(height: 24),
+              if (_signup) ...[
+                TextFormField(
+                  controller: _name,
+                  enabled: !_busy,
+                  maxLength: 60,
+                  autofillHints: const [AutofillHints.nickname],
+                  textCapitalization: TextCapitalization.words,
+                  decoration: const InputDecoration(labelText: 'Name'),
+                  validator: (value) => value == null || value.trim().isEmpty
+                      ? 'Enter your name.'
+                      : null,
+                ),
+                const SizedBox(height: 12),
+              ],
+              TextFormField(
+                controller: _email,
+                enabled: !_busy,
+                keyboardType: TextInputType.emailAddress,
+                autocorrect: false,
+                autofillHints: const [AutofillHints.email],
+                decoration: const InputDecoration(labelText: 'Email'),
+                validator: (value) =>
+                    value == null ||
+                        value.trim().length > 254 ||
+                        !RegExp(r'^[^\s@]+@[^\s@]+\.[^\s@]+$')
+                            .hasMatch(value.trim())
+                    ? 'Enter a valid email address.'
+                    : null,
+              ),
+              const SizedBox(height: 12),
+              TextFormField(
+                controller: _password,
+                enabled: !_busy,
+                obscureText: !_showPassword,
+                autocorrect: false,
+                enableSuggestions: false,
+                autofillHints: [
+                  _signup ? AutofillHints.newPassword : AutofillHints.password,
+                ],
+                decoration: InputDecoration(
+                  labelText: 'Password',
+                  helperText: _signup ? 'Use 12 to 128 characters.' : null,
+                  suffixIcon: IconButton(
+                    tooltip: _showPassword ? 'Hide password' : 'Show password',
+                    onPressed: _busy
+                        ? null
+                        : () => setState(() => _showPassword = !_showPassword),
+                    icon: Icon(
+                      _showPassword ? Icons.visibility_off : Icons.visibility,
+                    ),
+                  ),
+                ),
+                validator: (value) =>
+                    value == null || value.length < 12 || value.length > 128
+                    ? 'Use a password between 12 and 128 characters.'
+                    : null,
+              ),
+              if (_signup) ...[
+                const SizedBox(height: 12),
+                TextFormField(
+                  controller: _confirm,
+                  enabled: !_busy,
+                  obscureText: !_showPassword,
+                  autocorrect: false,
+                  enableSuggestions: false,
+                  decoration: const InputDecoration(
+                    labelText: 'Confirm password',
+                  ),
+                  validator: (value) => value != _password.text
+                      ? 'Passwords do not match.'
+                      : null,
+                ),
+              ],
+              if (_error != null) ...[
+                const SizedBox(height: 16),
+                Semantics(
+                  liveRegion: true,
+                  child: Text(
+                    _error!,
+                    style: TextStyle(
+                      color: Theme.of(context).colorScheme.error,
+                    ),
+                  ),
+                ),
+              ],
+              const SizedBox(height: 24),
+              FilledButton(
+                onPressed: _busy ? null : _submit,
+                child: Text(
+                  _busy
+                      ? 'Please wait...'
+                      : _signup
+                      ? 'Create account'
+                      : 'Log in',
+                ),
+              ),
+              TextButton(
+                onPressed: _busy
+                    ? null
+                    : () => setState(() {
+                        _signup = !_signup;
+                        _error = null;
+                        _password.clear();
+                        _confirm.clear();
+                        _formKey.currentState?.reset();
+                      }),
+                child: Text(
+                  _signup
+                      ? 'Already a member? Log in'
+                      : 'New here? Create an account',
+                ),
+              ),
+            ],
           ),
         ),
       ),

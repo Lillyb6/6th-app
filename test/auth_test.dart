@@ -7,6 +7,8 @@ import 'package:http/testing.dart';
 import 'package:sixthapp/auth_api.dart';
 import 'package:sixthapp/main.dart';
 
+import 'social_test_helpers.dart';
+
 void main() {
   Future<void> fillLogin(WidgetTester tester) async {
     await tester.enterText(
@@ -30,13 +32,11 @@ void main() {
         1000,
   });
 
-  testWidgets('Login gates the journal and logout clears the collection', (
+  testWidgets('Login gates the community and logout returns to login', (
     tester,
   ) async {
-    final requests = <http.Request>[];
     final api = AuthApi(
       client: MockClient((request) async {
-        requests.add(request);
         if (request.url.path == '/auth/logout') {
           expect(
             request.headers['Authorization'],
@@ -44,36 +44,21 @@ void main() {
           );
           return http.Response('{}', 200);
         }
-        expect(jsonDecode(request.body)['password'], 'rainbow-cloud-123');
         return http.Response(sessionResponse(), 200);
       }),
     );
     addTearDown(api.close);
-    await tester.pumpWidget(CloudClubApp(authApi: api));
+    await tester.pumpWidget(
+      CloudClubApp(authApi: api, cloudApiBuilder: (_) => TestCloudApi()),
+    );
     expect(find.text('Welcome back'), findsOneWidget);
-    expect(find.text('Record a cloud spotting'), findsNothing);
+    expect(find.text('Look up, Sky.'), findsNothing);
     await fillLogin(tester);
-    expect(find.text('Hello, Sky!'), findsOneWidget);
-    await tester.tap(find.text('Record a cloud spotting'));
-    await tester.pumpAndSettle();
-    await tester.enterText(find.byType(TextFormField).first, 'Dragon');
-    await tester.ensureVisible(find.text('Add to collection'));
-    await tester.tap(find.text('Add to collection'));
-    await tester.pumpAndSettle();
-    expect(find.text('Dragon'), findsOneWidget);
+    expect(find.text('Look up, Sky.'), findsOneWidget);
     await tester.tap(find.byTooltip('Log out'));
     await tester.pumpAndSettle();
     expect(find.text('Welcome back'), findsOneWidget);
-    expect(find.text('Dragon'), findsNothing);
-    await fillLogin(tester);
-    await tester.tap(find.text('Collection'));
-    await tester.pumpAndSettle();
-    expect(find.text('A sky full of possibilities'), findsOneWidget);
-    expect(requests.map((request) => request.url.path), [
-      '/auth/login',
-      '/auth/logout',
-      '/auth/login',
-    ]);
+    expect(find.text('Look up, Sky.'), findsNothing);
   });
 
   testWidgets('Invalid credentials cannot open the journal', (tester) async {
@@ -84,10 +69,12 @@ void main() {
       ),
     );
     addTearDown(api.close);
-    await tester.pumpWidget(CloudClubApp(authApi: api));
+    await tester.pumpWidget(
+      CloudClubApp(authApi: api, cloudApiBuilder: (_) => TestCloudApi()),
+    );
     await fillLogin(tester);
     expect(find.text('Incorrect email or password.'), findsOneWidget);
-    expect(find.text('Record a cloud spotting'), findsNothing);
+    expect(find.text('Look up, Sky.'), findsNothing);
   });
 
   testWidgets('Signup checks confirmation and submits real account fields', (
@@ -107,7 +94,9 @@ void main() {
       }),
     );
     addTearDown(api.close);
-    await tester.pumpWidget(CloudClubApp(authApi: api));
+    await tester.pumpWidget(
+      CloudClubApp(authApi: api, cloudApiBuilder: (_) => TestCloudApi()),
+    );
     await tester.ensureVisible(find.text('New here? Create an account'));
     await tester.tap(find.text('New here? Create an account'));
     await tester.pumpAndSettle();
@@ -145,7 +134,7 @@ void main() {
     await tester.tap(find.widgetWithText(FilledButton, 'Create account'));
     await tester.pumpAndSettle();
     expect(calls, 1);
-    expect(find.text('Hello, Sky!'), findsOneWidget);
+    expect(find.text('Look up, Sky.'), findsOneWidget);
   });
 
   testWidgets('Network errors leave login available for retry', (tester) async {
@@ -153,7 +142,9 @@ void main() {
       client: MockClient((_) async => throw http.ClientException('Offline')),
     );
     addTearDown(api.close);
-    await tester.pumpWidget(CloudClubApp(authApi: api));
+    await tester.pumpWidget(
+      CloudClubApp(authApi: api, cloudApiBuilder: (_) => TestCloudApi()),
+    );
     await fillLogin(tester);
     expect(
       find.text(
@@ -165,6 +156,6 @@ void main() {
       tester.widget<FilledButton>(find.byType(FilledButton)).onPressed,
       isNotNull,
     );
-    expect(find.text('Record a cloud spotting'), findsNothing);
+    expect(find.text('Look up, Sky.'), findsNothing);
   });
 }

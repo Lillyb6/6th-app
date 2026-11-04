@@ -2,119 +2,101 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:sixthapp/main.dart';
 
+import 'social_test_helpers.dart';
+
 void main() {
-  testWidgets('Content stays reachable after rotating to landscape', (
+  for (final size in [
+    const Size(320, 480),
+    const Size(640, 320),
+    const Size(768, 1024),
+    const Size(1440, 900),
+  ]) {
+    testWidgets('Cloud tabs remain usable at $size', (tester) async {
+      tester.view.devicePixelRatio = 1;
+      tester.view.physicalSize = size;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: cloudTheme(),
+          home: CloudClubHome(api: TestCloudApi(), name: 'Sky'),
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(find.text('Look up, Sky.'), findsOneWidget);
+      expect(find.text('Cloud Club'), findsOneWidget);
+      await tester.tap(find.text('Profile').last);
+      await tester.pumpAndSettle();
+      expect(find.text('Best clouds'), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    });
+  }
+  testWidgets('Safe areas protect mobile navigation and the wordmark', (
     tester,
   ) async {
     tester.view.devicePixelRatio = 1;
-    tester.view.physicalSize = const Size(320, 480);
-    addTearDown(tester.view.resetPhysicalSize);
-    addTearDown(tester.view.resetDevicePixelRatio);
-    await tester.pumpWidget(const MaterialApp(home: CloudClubHome()));
-
-    tester.view.physicalSize = const Size(640, 320);
-    await tester.pumpAndSettle();
-    expect(find.text('Cloud Club').hitTestable(), findsOneWidget);
-    final finalStep = find.text('Your discoveries');
-    await tester.scrollUntilVisible(finalStep, 150);
-    await tester.pumpAndSettle();
-    expect(finalStep.hitTestable(), findsOneWidget);
-    expect(tester.takeException(), isNull);
-  });
-
-  testWidgets('Content avoids device cutouts and the bottom system area', (
-    tester,
-  ) async {
-    tester.view.devicePixelRatio = 1;
-    tester.view.physicalSize = const Size(400, 700);
+    tester.view.physicalSize = const Size(390, 844);
     tester.view.padding = FakeViewPadding(top: 44, bottom: 34);
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
     addTearDown(tester.view.resetPadding);
-    await tester.pumpWidget(const MaterialApp(home: CloudClubHome()));
-
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: cloudTheme(),
+        home: CloudClubHome(api: TestCloudApi()),
+      ),
+    );
+    await tester.pumpAndSettle();
     expect(
       tester.getTopLeft(find.text('Cloud Club')).dy,
       greaterThanOrEqualTo(44),
     );
-    final notice = find.text(
-      'Entries last for this session and disappear when the app restarts. Photos and AI guesses are coming later.',
+    expect(
+      tester.getBottomRight(find.text('Profile')).dy,
+      lessThanOrEqualTo(844 - 34),
     );
-    await tester.scrollUntilVisible(notice, 150);
-    await tester.pumpAndSettle();
-    expect(notice.hitTestable(), findsOneWidget);
-    expect(tester.getBottomRight(notice).dy, lessThanOrEqualTo(700 - 34));
     expect(tester.takeException(), isNull);
   });
-
-  testWidgets('Cloud Club introduces the cloud spotting flow', (tester) async {
-    await tester.pumpWidget(const MaterialApp(home: CloudClubHome()));
-    expect(find.text('Cloud Club'), findsOneWidget);
-    expect(find.text('What do you see?'), findsOneWidget);
-    expect(find.text('Record a cloud spotting'), findsOneWidget);
-    expect(find.text('A little inspiration'), findsOneWidget);
-    await tester.scrollUntilVisible(find.text('Your discoveries'), 150);
-    expect(find.text('Your discoveries'), findsOneWidget);
-    expect(tester.takeException(), isNull);
-  });
-
-  testWidgets('Starting screen remains readable on a small phone', (
+  testWidgets('Feed failure offers a retry and leaves navigation usable', (
     tester,
   ) async {
-    tester.view.physicalSize = const Size(320, 480);
-    tester.view.devicePixelRatio = 1;
-    addTearDown(tester.view.resetPhysicalSize);
-    addTearDown(tester.view.resetDevicePixelRatio);
-
-    await tester.pumpWidget(const MaterialApp(home: CloudClubHome()));
-    expect(tester.takeException(), isNull);
-
-    final notice = find.text(
-      'Entries last for this session and disappear when the app restarts. Photos and AI guesses are coming later.',
-    );
-    await tester.scrollUntilVisible(notice, 150);
-    await tester.pumpAndSettle();
-    expect(notice.hitTestable(), findsOneWidget);
-    expect(tester.takeException(), isNull);
-  });
-
-  testWidgets('Starting screen supports enlarged text', (tester) async {
     await tester.pumpWidget(
-      const MaterialApp(
-        home: MediaQuery(
-          data: MediaQueryData(textScaler: TextScaler.linear(2)),
-          child: CloudClubHome(),
-        ),
+      MaterialApp(
+        theme: cloudTheme(),
+        home: CloudClubHome(api: failingApi()),
       ),
     );
-
-    await tester.scrollUntilVisible(find.text('Your discoveries'), 200);
     await tester.pumpAndSettle();
-    expect(find.text('Your discoveries').hitTestable(), findsOneWidget);
+    expect(find.text('The sky is offline.'), findsOneWidget);
+    expect(find.text('Try again'), findsOneWidget);
+    await tester.tap(find.text('Post'));
+    await tester.pumpAndSettle();
+    expect(find.text('Find your cloud'), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
-
-  testWidgets('Cloud Club content is reachable on a small phone screen', (
-    tester,
-  ) async {
-    tester.view.physicalSize = const Size(320, 480);
+  testWidgets('Large text can scroll through the posting form', (tester) async {
     tester.view.devicePixelRatio = 1;
+    tester.view.physicalSize = const Size(390, 844);
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
-
-    await tester.pumpWidget(const MaterialApp(home: CloudClubHome()));
-
-    final comingSoonMessage = find.text(
-      'Entries last for this session and disappear when the app restarts. Photos and AI guesses are coming later.',
-    );
-    await tester.scrollUntilVisible(
-      comingSoonMessage,
-      150,
-      scrollable: find.byType(Scrollable),
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: cloudTheme(),
+        builder: (_, child) => MediaQuery(
+          data: const MediaQueryData(
+            size: Size(390, 844),
+            textScaler: TextScaler.linear(1.6),
+          ),
+          child: child!,
+        ),
+        home: CloudClubHome(api: TestCloudApi()),
+      ),
     );
     await tester.pumpAndSettle();
-
-    expect(comingSoonMessage.hitTestable(), findsOneWidget);
+    await tester.tap(find.text('Post'));
+    await tester.pumpAndSettle();
+    await tester.ensureVisible(find.text('Post cloud'));
+    expect(find.text('Post cloud').hitTestable(), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
 }

@@ -54,3 +54,6 @@ app.*.map.json
 __pycache__/
 .venv/
 backend/data/
+
+# Local design reviews and browser captures
+/.taste-skill/
