@@ -56,7 +56,9 @@ class SupabaseCloudApi extends CloudApi {
     final user = _db.auth.currentUser;
     if (user == null) throw const AuthException('Please log in again.');
     final row = await _db.from('profiles').select().eq('id', user.id).single();
-    final avatarPath = row['avatar_path'] as String? ?? '';
+    final avatarPath = _normalizeStoragePath(
+      row['avatar_path'] as String? ?? '',
+    );
     return {
       'id': user.id,
       'name': row['name'] as String,
@@ -73,7 +75,9 @@ class SupabaseCloudApi extends CloudApi {
         .select('avatar_path')
         .eq('id', user.id)
         .single();
-    final previousPath = old['avatar_path'] as String? ?? '';
+    final previousPath = _normalizeStoragePath(
+      old['avatar_path'] as String? ?? '',
+    );
     final avatar = data['avatar'] as String? ?? '';
     var avatarPath = previousPath;
     if (avatar.isEmpty) {
@@ -90,7 +94,9 @@ class SupabaseCloudApi extends CloudApi {
         })
         .eq('id', user.id);
     if (previousPath.isNotEmpty && previousPath != avatarPath) {
-      await _db.storage.from(_bucket).remove([previousPath]);
+      await _db.storage.from(_bucket).remove([
+        _normalizeStoragePath(previousPath),
+      ]);
     }
     return _getProfile();
   }
@@ -133,7 +139,9 @@ class SupabaseCloudApi extends CloudApi {
         final photoLikes = likeRows
             .where((like) => like['post_id'] == row['id'])
             .toList();
-        final avatarPath = profile['avatar_path'] as String? ?? '';
+        final avatarPath = _normalizeStoragePath(
+          profile['avatar_path'] as String? ?? '',
+        );
         return <String, dynamic>{
           'id': row['id'],
           'user_id': row['user_id'],
@@ -175,7 +183,9 @@ class SupabaseCloudApi extends CloudApi {
           .single();
       return {'id': row['id']};
     } catch (_) {
-      await _db.storage.from(_bucket).remove([imagePath]);
+      await _db.storage.from(_bucket).remove([
+        _normalizeStoragePath(imagePath),
+      ]);
       rethrow;
     }
   }
@@ -220,7 +230,9 @@ class SupabaseCloudApi extends CloudApi {
           .eq('user_id', user.id)
           .single();
       await _db.from('posts').delete().eq('id', id).eq('user_id', user.id);
-      await _db.storage.from(_bucket).remove([row['image_path'] as String]);
+      await _db.storage.from(_bucket).remove([
+        _normalizeStoragePath(row['image_path'] as String),
+      ]);
       return {'status': 'ok'};
     }
     throw const AuthException('That Cloud Club action is not available.');
@@ -240,17 +252,29 @@ class SupabaseCloudApi extends CloudApi {
       throw const AuthException('Choose a photo under 5 MB.');
     }
     final path = '$prefix-${DateTime.now().microsecondsSinceEpoch}.$extension';
-    return _db.storage
+    await _db.storage
         .from(_bucket)
         .uploadBinary(
           path,
           bytes,
           fileOptions: sb.FileOptions(contentType: mime, cacheControl: '3600'),
         );
+    // Storage APIs that take a path expect it relative to the bucket. Keep
+    // that canonical form in the database and use it for signed URLs/removal.
+    return path;
   }
 
-  Future<String> _signedImage(String path) =>
-      _db.storage.from(_bucket).createSignedUrl(path, 3600);
+  String _normalizeStoragePath(String path) {
+    final clean = path.replaceFirst(RegExp(r'^/+'), '');
+    final bucketPrefix = '$_bucket/';
+    return clean.startsWith(bucketPrefix)
+        ? clean.substring(bucketPrefix.length)
+        : clean;
+  }
+
+  Future<String> _signedImage(String path) => _db.storage
+      .from(_bucket)
+      .createSignedUrl(_normalizeStoragePath(path), 3600);
 
   @override
   void close() {}
