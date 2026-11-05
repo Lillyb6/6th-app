@@ -8,26 +8,28 @@ A photo community for people who always look up. Sign in, share a cloud, and col
 - **Post (+):** choose a JPEG, PNG, or WebP photo up to 5 MB, preview it, add a caption and optional location, then publish it to the club. You can feature it in your best clouds.
 - **Profile:** a profile photo, name, editable bio, and galleries for best clouds and all your photos. Open a photo to feature or unfeature it, like it, or delete your own post.
 
-Photos, captions, likes, bios, avatars, and best-cloud selections persist in SQLite across app and backend restarts. Accounts share the same community feed. The layout follows the cloud / plus / profile sketch on phones and uses a sidebar on desktop.
+Photos, captions, likes, bios, avatars, and best-cloud selections persist across app restarts. Accounts share the same community feed. The layout follows the cloud / plus / profile sketch on phones and uses a sidebar on desktop.
 
-## Run locally
+## Hosted backend (Supabase)
 
-Python 3.10+ and Flutter are required. The backend has no third-party Python dependencies.
+The Flutter app connects to the Supabase project configured in `lib/main.dart`. Supabase Auth handles accounts, Postgres stores profiles/posts/likes, and the private `cloud-photos` Storage bucket holds uploaded images. Run `supabase/cloud_club.sql` once in the project's SQL Editor before launching the app; it creates the tables, profile-on-signup trigger, access policies, and bucket.
 
-Start the backend in one terminal:
+The project URL and publishable key can be overridden at build time:
 
-```powershell
-python backend/server.py
+```sh
+flutter run -d chrome --web-hostname localhost --web-port 8080 \
+  --dart-define=SUPABASE_URL=https://your-project.supabase.co \
+  --dart-define=SUPABASE_PUBLISHABLE_KEY=sb_publishable_...
 ```
 
-Then start the app in another:
+If email confirmation is enabled in Supabase Auth, new members must confirm their email before logging in. The old `backend/` Python/SQLite API remains available for local development and its tests, but the app entry point now uses Supabase. Existing SQLite accounts and posts are not automatically copied into Supabase.
 
-```powershell
+## Build a web preview
+
+```sh
 flutter pub get
 flutter run -d chrome --web-hostname localhost --web-port 8080
 ```
-
-The API health check is `http://127.0.0.1:8000/health`. Keep the backend running for login, uploading, the feed, and profile edits.
 
 For a self-contained web build (including the Flutter rendering files):
 
