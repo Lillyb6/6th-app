@@ -31,6 +31,12 @@ class _AuthGateState extends State<AuthGate> {
   String? _error;
 
   @override
+  void initState() {
+    super.initState();
+    _session = _api.restoredSession;
+  }
+
+  @override
   void dispose() {
     _expiry?.cancel();
     for (final controller in [_email, _password, _name, _confirm]) {
@@ -59,6 +65,7 @@ class _AuthGateState extends State<AuthGate> {
       _confirm.clear();
       setState(() => _session = session);
       _expiry?.cancel();
+      if (_api is SupabaseAuthApi) return;
       _expiry = Timer(session.expiresAt.difference(DateTime.now()), () {
         if (!mounted) return;
         Navigator.of(context).popUntil((route) => route.isFirst);

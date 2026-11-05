@@ -37,7 +37,12 @@ class CloudAvatar extends StatelessWidget {
     radius: radius,
     backgroundColor: const Color(0xFFE1EBEF),
     foregroundColor: cloudInk,
-    backgroundImage: data.isEmpty ? null : MemoryImage(photoBytes(data)),
+    backgroundImage: data.isEmpty
+        ? null
+        : (data.startsWith('http')
+                  ? NetworkImage(data)
+                  : MemoryImage(photoBytes(data)))
+              as ImageProvider,
     child: data.isEmpty
         ? Text(
             name.isEmpty ? '?' : name.characters.first.toUpperCase(),
@@ -54,13 +59,18 @@ class PhotoImage extends StatelessWidget {
   const PhotoImage(this.data, {super.key});
   final String data;
   @override
-  Widget build(BuildContext context) => Image.memory(
-    photoBytes(data),
-    fit: BoxFit.cover,
-    gaplessPlayback: true,
-    errorBuilder: (_, _, _) => const ColoredBox(
-      color: cloudGround,
-      child: Center(child: Text('This photo could not be displayed.')),
-    ),
-  );
+  Widget build(BuildContext context) {
+    final provider = data.startsWith('http')
+        ? NetworkImage(data) as ImageProvider
+        : MemoryImage(photoBytes(data));
+    return Image(
+      image: provider,
+      fit: BoxFit.cover,
+      gaplessPlayback: true,
+      errorBuilder: (_, _, _) => const ColoredBox(
+        color: cloudGround,
+        child: Center(child: Text('This photo could not be displayed.')),
+      ),
+    );
+  }
 }
