@@ -15,6 +15,54 @@ class SupabaseCloudApi extends CloudApi {
   static const _bucket = 'cloud-photos';
 
   @override
+  Future<Map<String, dynamic>> guessCloud(String dataUrl) async {
+    try {
+      final comma = dataUrl.indexOf(',');
+      final semicolon = dataUrl.indexOf(';');
+      if (!dataUrl.startsWith('data:image/') || comma < 0 || semicolon < 0) {
+        throw const AuthException('Choose a valid cloud photo first.');
+      }
+      final response = await _db.functions.invoke(
+        'cloud-shape',
+        body: {
+          'imageBase64': dataUrl.substring(comma + 1),
+          'mimeType': dataUrl.substring(5, semicolon),
+        },
+      );
+      if (response.data is Map<String, dynamic>) {
+        return response.data as Map<String, dynamic>;
+      }
+      throw const AuthException(
+        'The cloud guessing service returned an invalid response.',
+      );
+    } on sb.FunctionException catch (error) {
+      final details = error.details;
+      if (details is Map && details['error'] is String) {
+        if (details['status'] == 503) {
+          throw const AuthException(
+            'Gemini is temporarily busy. Please wait a moment and try again.',
+          );
+        }
+        if (details['status'] == 429) {
+          throw const AuthException(
+            'Gemini has reached its usage limit. Please try again later.',
+          );
+        }
+        throw AuthException(details['error'] as String);
+      }
+      throw const AuthException(
+        'Could not get a cloud guess. Please try again.',
+      );
+    } on AuthException {
+      rethrow;
+    } catch (_) {
+      throw const AuthException(
+        'Could not get a cloud guess. Please try again.',
+      );
+    }
+  }
+
+  @override
   Future<Map<String, dynamic>> request(
     String path, {
     Map<String, dynamic>? data,

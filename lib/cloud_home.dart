@@ -924,7 +924,9 @@ class UploadCloud extends StatefulWidget {
 class _UploadCloudState extends State<UploadCloud> {
   final _caption = TextEditingController(), _location = TextEditingController();
   String? _photo, _error;
-  bool _best = true, _busy = false, _picking = false;
+  Map<String, dynamic>? _guess;
+  String? _guessError;
+  bool _best = true, _busy = false, _picking = false, _guessing = false;
   @override
   void dispose() {
     _caption.dispose();
@@ -940,7 +942,13 @@ class _UploadCloudState extends State<UploadCloud> {
     });
     try {
       final data = await widget.picker();
-      if (mounted && data != null) setState(() => _photo = data);
+      if (mounted && data != null) {
+        setState(() {
+          _photo = data;
+          _guess = null;
+          _guessError = null;
+        });
+      }
     } on AuthException catch (e) {
       if (mounted) setState(() => _error = e.message);
     } catch (_) {
@@ -952,6 +960,37 @@ class _UploadCloudState extends State<UploadCloud> {
     } finally {
       if (mounted) setState(() => _picking = false);
     }
+  }
+
+  Future<void> _guessCloud() async {
+    final photo = _photo;
+    if (_guessing || photo == null) return;
+    setState(() {
+      _guessing = true;
+      _guessError = null;
+      _error = null;
+    });
+    try {
+      final result = await widget.api.guessCloud(photo);
+      if (mounted) setState(() => _guess = result);
+    } on AuthException catch (error) {
+      if (mounted) setState(() => _guessError = error.message);
+    } catch (_) {
+      if (mounted) {
+        setState(
+          () => _guessError = 'Could not get a guess. Please try again.',
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _guessing = false);
+    }
+  }
+
+  void _useGuess(String guess) {
+    _caption.text = _caption.text.trim().isEmpty
+        ? guess
+        : '${_caption.text.trim()} $guess';
+    _caption.selection = TextSelection.collapsed(offset: _caption.text.length);
   }
 
   Future<void> _post() async {
@@ -1112,6 +1151,75 @@ class _UploadCloudState extends State<UploadCloud> {
                         hintText: 'What do you see in this cloud?',
                       ),
                     ),
+                    if (_photo != null) ...[
+                      const SizedBox(height: 8),
+                      OutlinedButton.icon(
+                        onPressed: _guessing || _busy ? null : _guessCloud,
+                        icon: _guessing
+                            ? const SizedBox(
+                                width: 18,
+                                height: 18,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                ),
+                              )
+                            : const Icon(Icons.auto_awesome_outlined),
+                        label: Text(
+                          _guessing
+                              ? 'Looking at your cloud...'
+                              : 'Guess this cloud',
+                        ),
+                      ),
+                      if (_guessError != null)
+                        Padding(
+                          padding: const EdgeInsets.only(top: 8),
+                          child: Text(
+                            _guessError!,
+                            style: TextStyle(
+                              color: Theme.of(context).colorScheme.error,
+                            ),
+                          ),
+                        ),
+                      if (_guess != null)
+                        Card(
+                          margin: const EdgeInsets.only(top: 10),
+                          child: Padding(
+                            padding: const EdgeInsets.all(14),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                const Text(
+                                  'Cloud daydream',
+                                  style: TextStyle(fontWeight: FontWeight.w600),
+                                ),
+                                const SizedBox(height: 6),
+                                Text(_guess!['description'] as String? ?? ''),
+                                const SizedBox(height: 8),
+                                Wrap(
+                                  spacing: 6,
+                                  children: [
+                                    for (final alternative
+                                        in (_guess!['alternatives']
+                                                as List<dynamic>? ??
+                                            []))
+                                      ActionChip(
+                                        label: Text(alternative as String),
+                                        onPressed: () => _useGuess(alternative),
+                                      ),
+                                  ],
+                                ),
+                                const Text(
+                                  'AI guesses are just for fun.',
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    color: cloudMuted,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                    ],
                     const SizedBox(height: 16),
                     const Text(
                       'Location (optional)',

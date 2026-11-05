@@ -5,7 +5,7 @@ A photo community for people who always look up. Sign in, share a cloud, and col
 ## The three tabs
 
 - **Clouds:** a chronological, paginated feed of photos posted by members. Like photos, copy a caption, and refresh for new posts.
-- **Post (+):** choose a JPEG, PNG, or WebP photo up to 5 MB, preview it, add a caption and optional location, then publish it to the club. You can feature it in your best clouds.
+- **Post (+):** choose a JPEG, PNG, or WebP photo up to 5 MB, preview it, ask Gemini for playful cloud-shape guesses, add a caption and optional location, then publish it to the club. You can feature it in your best clouds.
 - **Profile:** a profile photo, name, editable bio, and galleries for best clouds and all your photos. Open a photo to feature or unfeature it, like it, or delete your own post.
 
 Photos, captions, likes, bios, avatars, and best-cloud selections persist across app restarts. Accounts share the same community feed. The layout follows the cloud / plus / profile sketch on phones and uses a sidebar on desktop.
@@ -15,6 +15,11 @@ Photos, captions, likes, bios, avatars, and best-cloud selections persist across
 The Flutter app connects to the Supabase project configured in `lib/main.dart`. Supabase Auth handles accounts, Postgres stores profiles/posts/likes, and the private `cloud-photos` Storage bucket holds uploaded images. Run `supabase/cloud_club.sql` once in the project's SQL Editor before launching the app; it creates the tables, profile-on-signup trigger, access policies, and bucket.
 
 The project URL and publishable key can be overridden at build time:
+
+Cloud shape guesses call the `cloud-shape` Edge Function. The function needs the
+`GEMINI_API_KEY` secret configured in Supabase Edge Function secrets; the key
+stays server-side. Tap **Guess this cloud** after choosing a photo. Alternative
+guesses can be added to the caption.
 
 ```sh
 flutter run -d chrome --web-hostname localhost --web-port 8080 \
@@ -60,7 +65,7 @@ Uploads accept JPEG, PNG, and WebP signatures and enforce a 5 MB limit. Posts an
 
 API routes: `GET /feed`, `GET /profile`, `GET /profile/posts`, `POST /posts`, `POST /profile`, `POST /posts/{id}/like`, `POST /posts/{id}/best`, and `POST /posts/{id}/delete`. All require a valid login session. Feed and own-photo endpoints accept a `before` post-ID cursor. Only the owner can feature or delete a photo. Authentication routes remain `POST /auth/signup`, `POST /auth/login`, `POST /auth/logout`, and `GET /auth/me`.
 
-This is a local development app. Hosted use still needs HTTPS, production hosting, image processing/storage, moderation/reporting, and operational limits. Photos are visible to signed-in members; there are no private posts. Comments, followers, photo capture, cloud AI guesses, and password recovery are not included. The share action copies a caption rather than publishing an external link.
+This is a local development app. Hosted use still needs HTTPS, production hosting, image processing/storage, moderation/reporting, and operational limits. Photos are visible to signed-in members; there are no private posts. Comments, followers, photo capture, and password recovery are not included. The share action copies a caption rather than publishing an external link.
 
 ## Checks
 

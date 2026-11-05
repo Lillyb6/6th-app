@@ -77,6 +77,11 @@ class CloudApi {
           );
   final String token, _baseUrl;
   final http.Client _client;
+
+  Future<Map<String, dynamic>> guessCloud(String dataUrl) async {
+    throw const AuthException('Cloud guesses are not available right now.');
+  }
+
   Future<Map<String, dynamic>> request(
     String path, {
     Map<String, dynamic>? data,
