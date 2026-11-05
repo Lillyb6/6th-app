@@ -501,7 +501,7 @@ class _CloudClubHomeState extends State<CloudClubHome> {
                                   padding: const EdgeInsets.only(bottom: 28),
                                   child: CloudPost(
                                     post: p,
-                                    own: p.userId == _profile['id'],
+                                    own: p.userId == '${_profile['id']}',
                                     onLike: () => _like(p),
                                     onBest: () => _best(p),
                                     onDelete: () => _delete(p),

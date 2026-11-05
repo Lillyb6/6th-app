@@ -9,7 +9,7 @@ import 'auth_api.dart';
 class CloudPhoto {
   CloudPhoto(Map<String, dynamic> d)
     : id = d['id'] as int,
-      userId = d['user_id'] as int,
+      userId = d['user_id'].toString(),
       name = d['name'] as String,
       image = d['image'] as String,
       avatar = d['avatar'] as String? ?? '',
@@ -21,7 +21,8 @@ class CloudPhoto {
       createdAt = DateTime.fromMillisecondsSinceEpoch(
         (d['created_at'] as int) * 1000,
       );
-  final int id, userId;
+  final int id;
+  final String userId;
   final String name, image, avatar, caption, location;
   bool best, liked;
   int likes;
