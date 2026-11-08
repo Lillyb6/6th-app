@@ -2,7 +2,7 @@
 
 ## Milestone 1: Photo to interpretation
 
-- Generate Flutter platform projects and verify on a device.
+- Verify the existing Flutter platform projects on a device.
 - Add camera and photo-library selection.
 - Define an upload contract with file-size and image-type limits.
 - Add server-side Gemini image interpretation.
@@ -13,7 +13,10 @@
 
 - [x] Add Home and Collection navigation with an in-memory spotting journal.
 - [x] Validate shape entries and support deletion with Undo.
-- Choose authentication and image storage.
+
+- [x] Require signup/login with persisted backend accounts and revocable sessions.
+- Add email verification, password reset, and account deletion.
+- Choose image storage and persist journal entries per account.
 - Save photos, guesses, and AI interpretations.
 - Add collection browsing and deletion.
 
