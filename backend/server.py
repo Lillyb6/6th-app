@@ -7,6 +7,9 @@ from urllib.parse import urlsplit
 
 
 class CloudClubHandler(BaseHTTPRequestHandler):
+    def do_HEAD(self):
+        self.do_GET()
+
     def do_GET(self):
         if urlsplit(self.path).path == "/health":
             self.send_json(200, {"status": "ok", "service": "cloud-club-api"})
@@ -19,7 +22,8 @@ class CloudClubHandler(BaseHTTPRequestHandler):
         self.send_header("Content-Type", "application/json; charset=utf-8")
         self.send_header("Content-Length", str(len(body)))
         self.end_headers()
-        self.wfile.write(body)
+        if self.command != "HEAD":
+            self.wfile.write(body)
 
 
 if __name__ == "__main__":
