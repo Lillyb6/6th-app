@@ -38,6 +38,9 @@ class AuthLimiter:
 
 
 class CloudClubHandler(BaseHTTPRequestHandler):
+    def do_HEAD(self):
+        self.do_GET()
+
     def bearer_token(self):
         value = self.headers.get("Authorization", "")
         return value[7:] if value.startswith("Bearer ") else ""
@@ -152,7 +155,8 @@ class CloudClubHandler(BaseHTTPRequestHandler):
             self.send_header("Access-Control-Allow-Headers", "Content-Type, Authorization")
             self.send_header("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
         self.end_headers()
-        self.wfile.write(body)
+        if self.command != "HEAD":
+            self.wfile.write(body)
 
 
 def create_server(host, port, database_path=None):

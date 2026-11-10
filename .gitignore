@@ -57,3 +57,16 @@ backend/data/
 
 # Local design reviews and browser captures
 /.taste-skill/
+
+# Additional local artifact exclusions
+*.py[cod]
+venv/
+.pytest_cache/
+.flutter-plugins*
+.packages
+build/
+coverage/
+android/local.properties
+ios/Pods/
+.vscode/
+Thumbs.db
