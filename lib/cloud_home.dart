@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter/services.dart';
 
 import 'auth_api.dart';
@@ -269,6 +269,7 @@ class _CloudClubHomeState extends State<CloudClubHome> {
                         name: _name,
                         avatar: _avatar,
                         onPosted: () async {
+                          if (!mounted) return;
                           setState(() => _tab = 0);
                           await _load();
                           _notice('Your cloud is out in the world.');
@@ -835,11 +836,12 @@ class _CommentSheetState extends State<CommentSheet> {
       });
       widget.onCountChanged(_comments.length);
     } on AuthException catch (e) {
-      if (mounted)
+      if (mounted) {
         setState(() {
           _error = e.message;
           _loading = false;
         });
+      }
     }
   }
 
@@ -897,7 +899,7 @@ class _CommentSheetState extends State<CommentSheet> {
                   )
                 : ListView.separated(
                     itemCount: _comments.length,
-                    separatorBuilder: (_, __) => const Divider(height: 16),
+                    separatorBuilder: (_, _) => const Divider(height: 16),
                     itemBuilder: (context, index) {
                       final comment = _comments[index];
                       final createdAt = DateTime.fromMillisecondsSinceEpoch(
@@ -1235,6 +1237,7 @@ class _UploadCloudState extends State<UploadCloud> {
           'best': _best,
         },
       );
+      if (!mounted) return;
       await widget.onPosted();
     } on AuthException catch (e) {
       if (mounted) setState(() => _error = e.message);
