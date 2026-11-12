@@ -18,6 +18,7 @@ class CloudPhoto {
       best = d['best'] == 1,
       liked = d['liked'] == 1,
       likes = d['like_count'] as int,
+      comments = d['comment_count'] as int? ?? 0,
       createdAt = DateTime.fromMillisecondsSinceEpoch(
         (d['created_at'] as int) * 1000,
       );
@@ -26,6 +27,7 @@ class CloudPhoto {
   final String name, image, avatar, caption, location;
   bool best, liked;
   int likes;
+  int comments;
   final DateTime createdAt;
 }
 

@@ -4,7 +4,7 @@ A photo community for people who always look up. Sign in, share a cloud, and col
 
 ## The three tabs
 
-- **Clouds:** a chronological, paginated feed of photos posted by members. Like photos, copy a caption, and refresh for new posts.
+- **Clouds:** a chronological, paginated feed of photos posted by members. Like photos, comment on clouds, copy a caption, and refresh for new posts.
 - **Post (+):** choose a JPEG, PNG, or WebP photo up to 5 MB, preview it, ask Gemini for playful cloud-shape guesses, add a caption and optional location, then publish it to the club. You can feature it in your best clouds.
 - **Profile:** a profile photo, name, editable bio, and galleries for best clouds and all your photos. Open a photo to feature or unfeature it, like it, or delete your own post.
 
@@ -12,7 +12,7 @@ Photos, captions, likes, bios, avatars, and best-cloud selections persist across
 
 ## Hosted backend (Supabase)
 
-The Flutter app connects to the Supabase project configured in `lib/main.dart`. Supabase Auth handles accounts, Postgres stores profiles/posts/likes, and the private `cloud-photos` Storage bucket holds uploaded images. Run `supabase/cloud_club.sql` once in the project's SQL Editor before launching the app; it creates the tables, profile-on-signup trigger, access policies, and bucket.
+The Flutter app connects to the Supabase project configured in `lib/main.dart`. Supabase Auth handles accounts, Postgres stores profiles/posts/likes/comments, and the private `cloud-photos` Storage bucket holds uploaded images. Run `supabase/cloud_club.sql` in the project's SQL Editor before launching the app. Run it again when upgrading an existing project to create the comments table and access policies; the script is safe to rerun.
 
 The project URL and publishable key can be overridden at build time:
 

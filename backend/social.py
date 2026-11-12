@@ -55,6 +55,12 @@ class SocialStore:
                     post_id INTEGER NOT NULL REFERENCES posts(id) ON DELETE CASCADE,
                     PRIMARY KEY(user_id, post_id)
                 );
+                CREATE TABLE IF NOT EXISTS comments (
+                    id INTEGER PRIMARY KEY, user_id INTEGER NOT NULL REFERENCES users(id),
+                    post_id INTEGER NOT NULL REFERENCES posts(id) ON DELETE CASCADE,
+                    body TEXT NOT NULL CHECK(length(body) BETWEEN 1 AND 500),
+                    created_at INTEGER NOT NULL
+                );
             """)
 
     def profile(self, user):
@@ -77,6 +83,7 @@ class SocialStore:
             rows = db.execute("""
                 SELECT p.*, u.name, COALESCE(pr.avatar,'') AS avatar,
                     (SELECT COUNT(*) FROM likes WHERE post_id=p.id) AS like_count,
+                    (SELECT COUNT(*) FROM comments WHERE post_id=p.id) AS comment_count,
                     EXISTS(SELECT 1 FROM likes WHERE post_id=p.id AND user_id=?) AS liked
                 FROM posts p JOIN users u ON u.id=p.user_id
                 LEFT JOIN profiles pr ON pr.user_id=u.id
@@ -93,6 +100,28 @@ class SocialStore:
             cursor = db.execute("INSERT INTO posts(user_id,image,caption,location,best,created_at) VALUES(?,?,?,?,?,?)",
                                 (user['id'], photo, caption, location, int(data.get('best') is True), int(time.time())))
         return {'id': cursor.lastrowid}
+
+    def comments(self, post_id):
+        with self.accounts.connect() as db:
+            if not db.execute("SELECT 1 FROM posts WHERE id=?", (post_id,)).fetchone():
+                raise AuthError(404, "This cloud is no longer available.")
+            rows = db.execute("""
+                SELECT c.id, c.post_id, c.user_id, c.body, c.created_at,
+                    u.name, COALESCE(p.avatar, '') AS avatar
+                FROM comments c JOIN users u ON u.id=c.user_id
+                LEFT JOIN profiles p ON p.user_id=c.user_id
+                WHERE c.post_id=? ORDER BY c.created_at, c.id
+            """, (post_id,)).fetchall()
+        return {'comments': [dict(row) for row in rows]}
+
+    def add_comment(self, user, post_id, data):
+        body = text(data, 'body', 500, True)
+        with self.accounts.connect() as db:
+            if not db.execute("SELECT 1 FROM posts WHERE id=?", (post_id,)).fetchone():
+                raise AuthError(404, "This cloud is no longer available.")
+            db.execute("INSERT INTO comments(user_id,post_id,body,created_at) VALUES(?,?,?,?)",
+                       (user['id'], post_id, body, int(time.time())))
+        return self.comments(post_id)
 
     def action(self, user, post_id, action, data):
         with self.accounts.connect() as db:

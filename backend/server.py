@@ -47,10 +47,12 @@ class CloudClubHandler(BaseHTTPRequestHandler):
 
     def do_GET(self):
         path = urlsplit(self.path).path
-        if path in ('/feed', '/profile', '/profile/posts'):
+        if path in ('/feed', '/profile', '/profile/posts') or re.fullmatch(r'/posts/\d+/comments', path):
             try:
                 user = self.server.accounts.current_user(self.bearer_token())
-                if path == '/profile':
+                if re.fullmatch(r'/posts/\d+/comments', path):
+                    self.send_json(200, self.server.social.comments(int(path.split('/')[2])))
+                elif path == '/profile':
                     self.send_json(200, self.server.social.profile(user))
                 else:
                     query = parse_qs(urlsplit(self.path).query)
@@ -76,7 +78,7 @@ class CloudClubHandler(BaseHTTPRequestHandler):
 
     def do_POST(self):
         path = urlsplit(self.path).path
-        if path in ('/posts', '/profile') or re.fullmatch(r'/posts/\d+/(like|best|delete)', path):
+        if path in ('/posts', '/profile') or re.fullmatch(r'/posts/\d+/(like|best|delete|comments)', path):
             self.social_post(path)
             return
         if path not in ("/auth/signup", "/auth/login", "/auth/logout"):
@@ -136,6 +138,9 @@ class CloudClubHandler(BaseHTTPRequestHandler):
                 self.send_json(201, self.server.social.post(user, data))
             elif path == '/profile':
                 self.send_json(200, self.server.social.update_profile(user, data))
+            elif path.endswith('/comments'):
+                post_id = int(path.split('/')[2])
+                self.send_json(201, self.server.social.add_comment(user, post_id, data))
             else:
                 _, _, post_id, action = path.split('/')
                 self.send_json(200, self.server.social.action(user, int(post_id), action, data))

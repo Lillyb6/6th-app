@@ -77,6 +77,13 @@ class SupabaseCloudApi extends CloudApi {
         return await _getPosts(path, own: true);
       }
       if (path == '/posts' && data != null) return await _createPost(data);
+      final commentsMatch = RegExp(r'^/posts/(\d+)/comments$').firstMatch(path);
+      if (commentsMatch != null) {
+        final postId = int.parse(commentsMatch.group(1)!);
+        return data == null
+            ? await _getComments(postId)
+            : await _addComment(postId, data);
+      }
       final match = RegExp(r'^/posts/(\d+)/(like|best|delete)$')
           .firstMatch(path);
       if (match != null) {
@@ -179,7 +186,16 @@ class SupabaseCloudApi extends CloudApi {
         .from('likes')
         .select('post_id,user_id')
         .inFilter('post_id', ids);
+    final comments = await _db
+        .from('comments')
+        .select('post_id')
+        .inFilter('post_id', ids);
     final likeRows = likes.cast<Map<String, dynamic>>();
+    final commentCounts = <int, int>{};
+    for (final comment in comments) {
+      final postId = comment['post_id'] as int;
+      commentCounts.update(postId, (count) => count + 1, ifAbsent: () => 1);
+    }
     final currentUserId = user.id;
     final cards = await Future.wait(
       page.map((row) async {
@@ -203,6 +219,7 @@ class SupabaseCloudApi extends CloudApi {
               ? 1
               : 0,
           'like_count': photoLikes.length,
+          'comment_count': commentCounts[row['id'] as int] ?? 0,
           'created_at':
               DateTime.parse(row['created_at'] as String)
                   .millisecondsSinceEpoch ~/
@@ -211,6 +228,62 @@ class SupabaseCloudApi extends CloudApi {
       }),
     );
     return {'posts': cards, 'next': rows.length > 12 ? page.last['id'] : null};
+  }
+
+  Future<Map<String, dynamic>> _getComments(int postId) async {
+    final rows = await _db
+        .from('comments')
+        .select('id,post_id,user_id,body,created_at')
+        .eq('post_id', postId)
+        .order('created_at');
+    final comments = rows.cast<Map<String, dynamic>>();
+    if (comments.isEmpty) return {'comments': <Map<String, dynamic>>[]};
+    final ids = comments
+        .map((row) => row['user_id'] as String)
+        .toSet()
+        .toList();
+    final profiles = await _db
+        .from('profiles')
+        .select('id,name,avatar_path')
+        .inFilter('id', ids);
+    final profileById = {for (final p in profiles) p['id'] as String: p};
+    return {
+      'comments': await Future.wait(
+        comments.map((row) async {
+          final profile = profileById[row['user_id']] ?? <String, dynamic>{};
+          final avatarPath = _normalizeStoragePath(
+            profile['avatar_path'] as String? ?? '',
+          );
+          return <String, dynamic>{
+            ...row,
+            'name': profile['name'] ?? 'Cloud watcher',
+            'avatar': avatarPath.isEmpty ? '' : await _signedImage(avatarPath),
+            'created_at':
+                DateTime.parse(row['created_at'] as String)
+                    .millisecondsSinceEpoch ~/
+                1000,
+          };
+        }),
+      ),
+    };
+  }
+
+  Future<Map<String, dynamic>> _addComment(
+    int postId,
+    Map<String, dynamic> data,
+  ) async {
+    final body = (data['body'] as String? ?? '').trim();
+    if (body.isEmpty || body.length > 500) {
+      throw const AuthException(
+        'Comments must be between 1 and 500 characters.',
+      );
+    }
+    await _db.from('comments').insert({
+      'post_id': postId,
+      'user_id': _db.auth.currentUser!.id,
+      'body': body,
+    });
+    return _getComments(postId);
   }
 
   Future<Map<String, dynamic>> _createPost(Map<String, dynamic> data) async {

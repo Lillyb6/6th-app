@@ -124,6 +124,21 @@ class _CloudClubHomeState extends State<CloudClubHome> {
     }
   }
 
+  Future<void> _comments(CloudPhoto post) async {
+    await showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      useSafeArea: true,
+      builder: (_) => CommentSheet(
+        api: _api,
+        post: post,
+        onCountChanged: (count) {
+          if (mounted) setState(() => post.comments = count);
+        },
+      ),
+    );
+  }
+
   Future<void> _best(CloudPhoto post) async {
     try {
       await _api.request('/posts/${post.id}/best', data: {'best': !post.best});
@@ -221,6 +236,7 @@ class _CloudClubHomeState extends State<CloudClubHome> {
                   Navigator.pop(c);
                   _delete(p);
                 },
+                onComments: () => _comments(p),
               ),
             ],
           ),
@@ -505,6 +521,7 @@ class _CloudClubHomeState extends State<CloudClubHome> {
                                     onLike: () => _like(p),
                                     onBest: () => _best(p),
                                     onDelete: () => _delete(p),
+                                    onComments: () => _comments(p),
                                   ),
                                 ),
                               if (_next != null)
@@ -638,11 +655,13 @@ class CloudPost extends StatefulWidget {
     required this.onLike,
     required this.onBest,
     required this.onDelete,
+    required this.onComments,
   });
   final CloudPhoto post;
   final bool own;
   final Future<void> Function() onLike, onBest;
   final VoidCallback onDelete;
+  final Future<void> Function() onComments;
   @override
   State<CloudPost> createState() => _CloudPostState();
 }
@@ -732,6 +751,13 @@ class _CloudPostState extends State<CloudPost> {
               '${p.likes} ${p.likes == 1 ? 'like' : 'likes'}',
               style: const TextStyle(fontSize: 13),
             ),
+            const SizedBox(width: 8),
+            IconButton(
+              tooltip: 'Comments',
+              onPressed: _busy ? null : () => _act(widget.onComments),
+              icon: const Icon(Icons.mode_comment_outlined, size: 20),
+            ),
+            Text('${p.comments}', style: const TextStyle(fontSize: 13)),
             const Spacer(),
             IconButton(
               tooltip: 'Copy caption',
@@ -761,6 +787,198 @@ class _CloudPostState extends State<CloudPost> {
       ],
     );
   }
+}
+
+class CommentSheet extends StatefulWidget {
+  const CommentSheet({
+    super.key,
+    required this.api,
+    required this.post,
+    required this.onCountChanged,
+  });
+  final CloudApi api;
+  final CloudPhoto post;
+  final ValueChanged<int> onCountChanged;
+
+  @override
+  State<CommentSheet> createState() => _CommentSheetState();
+}
+
+class _CommentSheetState extends State<CommentSheet> {
+  final _controller = TextEditingController();
+  List<Map<String, dynamic>> _comments = [];
+  bool _loading = true, _sending = false;
+  String? _error;
+
+  @override
+  void initState() {
+    super.initState();
+    _load();
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  Future<void> _load() async {
+    try {
+      final result = await widget.api.request(
+        '/posts/${widget.post.id}/comments',
+      );
+      if (!mounted) return;
+      setState(() {
+        _comments = (result['comments'] as List).cast<Map<String, dynamic>>();
+        _error = null;
+        _loading = false;
+      });
+      widget.onCountChanged(_comments.length);
+    } on AuthException catch (e) {
+      if (mounted)
+        setState(() {
+          _error = e.message;
+          _loading = false;
+        });
+    }
+  }
+
+  Future<void> _send() async {
+    final body = _controller.text.trim();
+    if (body.isEmpty || _sending) return;
+    setState(() => _sending = true);
+    try {
+      final result = await widget.api.request(
+        '/posts/${widget.post.id}/comments',
+        data: {'body': body},
+      );
+      if (!mounted) return;
+      setState(() {
+        _comments = (result['comments'] as List).cast<Map<String, dynamic>>();
+        _controller.clear();
+        _error = null;
+      });
+      widget.onCountChanged(_comments.length);
+    } on AuthException catch (e) {
+      if (mounted) setState(() => _error = e.message);
+    } finally {
+      if (mounted) setState(() => _sending = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) => Padding(
+    padding: EdgeInsets.only(
+      left: 20,
+      right: 20,
+      top: 20,
+      bottom: MediaQuery.viewInsetsOf(context).bottom + 20,
+    ),
+    child: SizedBox(
+      height: MediaQuery.sizeOf(context).height * .65,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'Cloud conversations',
+            style: TextStyle(fontSize: 20, fontWeight: FontWeight.w600),
+          ),
+          const SizedBox(height: 12),
+          Expanded(
+            child: _loading
+                ? const Center(child: CircularProgressIndicator())
+                : _error != null && _comments.isEmpty
+                ? Center(child: Text(_error!, textAlign: TextAlign.center))
+                : _comments.isEmpty
+                ? const Center(
+                    child: Text(
+                      'No comments yet. Share what you see in this cloud.',
+                    ),
+                  )
+                : ListView.separated(
+                    itemCount: _comments.length,
+                    separatorBuilder: (_, __) => const Divider(height: 16),
+                    itemBuilder: (context, index) {
+                      final comment = _comments[index];
+                      final createdAt = DateTime.fromMillisecondsSinceEpoch(
+                        (comment['created_at'] as int) * 1000,
+                      );
+                      final age = DateTime.now().difference(createdAt);
+                      final time = age.inDays > 0
+                          ? '${age.inDays}d ago'
+                          : age.inHours > 0
+                          ? '${age.inHours}h ago'
+                          : 'Just now';
+                      return Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          CloudAvatar(
+                            name: comment['name'] as String,
+                            data: comment['avatar'] as String? ?? '',
+                            radius: 17,
+                          ),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  '${comment['name']} · $time',
+                                  style: const TextStyle(
+                                    fontSize: 12,
+                                    color: cloudMuted,
+                                  ),
+                                ),
+                                const SizedBox(height: 3),
+                                Text(comment['body'] as String),
+                              ],
+                            ),
+                          ),
+                        ],
+                      );
+                    },
+                  ),
+          ),
+          if (_error != null && _comments.isNotEmpty)
+            Padding(
+              padding: const EdgeInsets.only(bottom: 8),
+              child: Text(_error!, style: const TextStyle(color: Colors.red)),
+            ),
+          Row(
+            children: [
+              Expanded(
+                child: TextField(
+                  controller: _controller,
+                  maxLength: 500,
+                  minLines: 1,
+                  maxLines: 4,
+                  textCapitalization: TextCapitalization.sentences,
+                  decoration: const InputDecoration(
+                    hintText: 'Write a comment...',
+                    counterText: '',
+                    border: OutlineInputBorder(),
+                  ),
+                  onSubmitted: (_) => _send(),
+                ),
+              ),
+              const SizedBox(width: 8),
+              IconButton.filled(
+                onPressed: _sending ? null : _send,
+                tooltip: 'Send comment',
+                icon: _sending
+                    ? const SizedBox(
+                        width: 18,
+                        height: 18,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                    : const Icon(Icons.send),
+              ),
+            ],
+          ),
+        ],
+      ),
+    ),
+  );
 }
 
 class ProfileGallery extends StatefulWidget {
