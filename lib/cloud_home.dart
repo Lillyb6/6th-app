@@ -836,11 +836,12 @@ class _CommentSheetState extends State<CommentSheet> {
       });
       widget.onCountChanged(_comments.length);
     } on AuthException catch (e) {
-      if (mounted)
+      if (mounted) {
         setState(() {
           _error = e.message;
           _loading = false;
         });
+      }
     }
   }
 
@@ -898,7 +899,7 @@ class _CommentSheetState extends State<CommentSheet> {
                   )
                 : ListView.separated(
                     itemCount: _comments.length,
-                    separatorBuilder: (_, __) => const Divider(height: 16),
+                    separatorBuilder: (_, _) => const Divider(height: 16),
                     itemBuilder: (context, index) {
                       final comment = _comments[index];
                       final createdAt = DateTime.fromMillisecondsSinceEpoch(
