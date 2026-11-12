@@ -269,6 +269,7 @@ class _CloudClubHomeState extends State<CloudClubHome> {
                         name: _name,
                         avatar: _avatar,
                         onPosted: () async {
+                          if (!mounted) return;
                           setState(() => _tab = 0);
                           await _load();
                           _notice('Your cloud is out in the world.');
@@ -1235,6 +1236,7 @@ class _UploadCloudState extends State<UploadCloud> {
           'best': _best,
         },
       );
+      if (!mounted) return;
       await widget.onPosted();
     } on AuthException catch (e) {
       if (mounted) setState(() => _error = e.message);
